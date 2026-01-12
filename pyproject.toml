@@ -1,0 +1,38 @@
+[project]
+name = "agent-example"
+version = "0.1.0"
+description = "Agent example project"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "openai>=2.15.0",
+    "python-dotenv>=1.2.1",
+    "requests>=2.32.5",
+]
+
+
+[tool.uv]
+index-url = "https://pypi.tuna.tsinghua.edu.cn/simple"
+
+[dependency-groups]
+dev = [
+    "black>=25.12.0",
+    "pre-commit>=4.5.1",
+    "ruff>=0.14.11",
+]
+
+[tool.ruff]
+line-length = 200  # 设置每行最大长度
+target-version = "py310"  # 目标Python版本
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle错误
+    "W",   # pycodestyle警告
+    "F",   # Pyflakes
+    "I",   # isort (import排序)
+    "B",   # flake8-bugbear
+]
+
+[tool.ruff.format]
+quote-style = "double"  # 统一使用双引号

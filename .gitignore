@@ -1,0 +1,32 @@
+# 字节码缓存文件
+__pycache__/
+*.py[cod]
+
+# 虚拟环境 (根据你使用的虚拟环境名称调整，通常是 venv, .venv, env)
+venv/
+.venv/
+env/
+
+# 安装包和分发目录
+build/
+dist/
+*.egg-info/
+
+# 环境变量文件（包含你的密钥！）
+.env
+.env.local
+
+# 操作系统生成的文件（如 MacOS 的 .DS_Store）
+.DS_Store
+
+# IDE 配置文件（如 PyCharm 的 .idea/，VSCode 的 .vscode/）
+.idea/
+.vscode/
+
+# 日志文件
+*.log
+
+# 单元测试/代码覆盖率输出
+.pytest_cache/
+.coverage
+htmlcov/

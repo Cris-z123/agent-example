@@ -1,0 +1,30 @@
+# 此配置集成了代码风格检查、格式化及commit信息校验
+fail_fast: false  # 某个钩子失败时，是否继续执行后续钩子[1](@ref)
+default_stages: [commit]  # 默认钩子执行阶段[2](@ref)
+repos:
+  # 仓库1: 通用Git钩子，用于基础检查[2,3,7](@ref)
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.4.0  # 版本号，可通过 pre-commit autoupdate 更新[4](@ref)
+    hooks:
+      - id: check-yaml        # 检查YAML文件语法
+      - id: end-of-file-fixer # 确保文件以换行符结尾[3,7](@ref)
+      - id: trailing-whitespace  # 删除行尾空格[3,7](@ref)
+      - id: check-merge-conflict  # 检查是否存在未解决的合并冲突标记[2,3](@ref)
+      - id: check-added-large-files  # 防止意外提交大文件[2](@ref)
+        args: ['--maxkb=512']  # 设置文件大小限制为512KB
+
+  # 仓库2: 使用Ruff进行极速的Python代码检查和格式化[4](@ref)
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.1.7
+    hooks:
+      - id: ruff           # 运行Ruff进行代码检查
+        args: ['--fix']    # 自动修复可修复的问题[4](@ref)
+      - id: ruff-format    # 运行Ruff格式化代码[4](@ref)
+
+  # 仓库3: 使用commitlint校验commit信息是否符合约定式提交规范[8,9,11](@ref)
+  - repo: https://github.com/alessandrojcm/commitlint-pre-commit-hook
+    rev: v9.6.0
+    hooks:
+      - id: commitlint
+        stages: [commit-msg]  # 指定在commit-msg阶段执行[8,11](@ref)
+        args: ['--config', 'commitlint.config.js']  # 指定commitlint配置文件[9](@ref)
