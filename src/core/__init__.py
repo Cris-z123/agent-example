@@ -1,3 +1,4 @@
-__all__ = ["OpenAICompatibleClient"]
+__all__ = ["OpenAICompatibleClient", "GeneralLLMClient"]
 
 from .OpenAICompatibleClient import OpenAICompatibleClient
+from .GeneralLLMClient import GeneralLLMClient

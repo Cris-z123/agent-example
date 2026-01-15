@@ -28,12 +28,12 @@ class GeneralLLMClient:
         self.client = OpenAI(api_key=api_key, base_url=base_url, timeout=timeout)
         self.extra_body = extra_body
 
-    def think(self, message: List[Dict[str, str]], temperature: float = 0) -> str:
+    def think(self, messages: List[Dict[str, str]], temperature: float = 0) -> str:
         """
         调用LLM模型进行思考并返回响应。
         
         Args:
-            message: 消息列表
+            messages: 消息列表
             temperature: 温度参数，控制输出的随机性
             
         Returns:
@@ -43,7 +43,7 @@ class GeneralLLMClient:
         try:
             create_params = {
                 "model": self.model,
-                "messages": message,
+                "messages": messages,
                 "temperature": temperature,
                 "stream": True
             }
