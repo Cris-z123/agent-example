@@ -1,6 +1,8 @@
+import math
+
 import torch
 import torch.nn as nn
-import math
+
 
 class PositionEncoding(nn.Module):
     """
@@ -39,7 +41,7 @@ class MultiHeadAttention(nn.Module):
         self.W_k = nn.Linear(d_model, d_model)
         self.W_v = nn.Linear(d_model, d_model)
         self.W_o = nn.Linear(d_model, d_model)
-    
+
     def scaled_dot_product_attention(self, Q, K, V, mask=None):
         # 计算注意力得分 (QK^T)
         attn_scores = torch.matmul(Q, K.transpose(-2, -1)) / math.sqrt(self.d_k)
@@ -54,19 +56,19 @@ class MultiHeadAttention(nn.Module):
         # 加权求和 (权重 * V)
         output = torch.matmul(attn_probs, V)
         return output
-    
+
     def spilt_heads(self, x):
         # 将输入 x 的形状从 (batch_size, seq_length, d_model)
         # 变换为 (batch_size, num_heads, seq_length, d_k)
         batch_size, seq_length, d_model = x.size()
         return x.view(batch_size, seq_length, self.num_heads, self.d_k).transpose(1, 2)
-    
+
     def combine_heads(self, x):
         # 将输入 x 的形状从 (batch_size, num_heads, seq_length, d_k)
         # 变回 (batch_size, seq_length, d_model)
         batch_size, num_heads, seq_length, d_k = x.size()
         return x.transpose(1, 2).contiguous().view(batch_size, seq_length, self.d_model)
-    
+
     def forward(self, Q, K, V, mask=None):
         # 对 Q, K, V 进行线性变换
         Q = self.spilt_heads(self.W_q(Q))
@@ -117,7 +119,7 @@ class EncoderLayer(nn.Module):
         ff_output = self.feed_forward(x)
         x = self.norm2(x + self.dropout(ff_output))
         return x
- 
+
 # ----解码器----
 class DecoderLayer(nn.Module):
     def __init__(self, d_model, num_heads, d_ff, dropout):

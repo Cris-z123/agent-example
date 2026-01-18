@@ -1,15 +1,15 @@
 import os
-from openai import OpenAI
+from typing import Dict, List, Optional
+
 from dotenv import load_dotenv
-from typing import List, Dict, Optional
+from openai import OpenAI
 
 load_dotenv()
 
-class GeneralLLMClient: 
+class GeneralLLMClient:
     def __init__(self, model: str = None, api_key: str = None, base_url: str = None, timeout: int = None, extra_body: Optional[Dict] = None):
         """
         初始化客户端。优先使用传入参数，如果未提供，则从环境变量加载。
-        
         Args:
             model: 模型ID
             api_key: API密钥
@@ -24,18 +24,16 @@ class GeneralLLMClient:
 
         if not all([self.model, api_key, base_url]):
             raise ValueError('model、api_key and base_url must be submitted or defined in .env')
-        
+
         self.client = OpenAI(api_key=api_key, base_url=base_url, timeout=timeout)
         self.extra_body = extra_body
 
     def think(self, messages: List[Dict[str, str]], temperature: float = 0) -> str:
         """
         调用LLM模型进行思考并返回响应。
-        
         Args:
             messages: 消息列表
             temperature: 温度参数，控制输出的随机性
-            
         Returns:
             模型响应文本，如果发生错误则返回None
         """
@@ -49,7 +47,7 @@ class GeneralLLMClient:
             }
             if self.extra_body:
                 create_params["extra_body"] = self.extra_body
-            
+
             response = self.client.chat.completions.create(**create_params)
 
             # 处理流式响应
@@ -63,7 +61,7 @@ class GeneralLLMClient:
         except Exception as e:
             print(f"❌调用LLM 发生错误：{e}")
             return None
-        
+
 if __name__ == '__main__':
     try:
         llm = GeneralLLMClient(extra_body={"enable_search": True})

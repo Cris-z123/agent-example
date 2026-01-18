@@ -1,11 +1,11 @@
-from typing import Dict, Any
+from typing import Any, Dict
 
 # 尝试相对导入；如果脚本直接运行（没有父包），回退到在运行时添加 src 到 sys.path 再做绝对导入
 try:
     from .get_weather import get_weather
 except Exception:
-    import sys
     import os
+    import sys
     current_dir = os.path.dirname(__file__)
     src_dir = os.path.abspath(os.path.join(current_dir, os.pardir))
     if src_dir not in sys.path:
@@ -24,10 +24,10 @@ class ToolExecutor:
             print(f"warning: tool '{name}' 已存在，将被覆盖")
         self.tools[name] = {"description": description, "func": func}
         print(f"tool '{name}' 已注册")
-    
+
     def getTool(self, name: str) -> callable:
         return self.tools.get(name, {}).get("func")
-    
+
     def getAvailableTools(self) -> str:
         return "\n".join([
             f"- {name}: {info['description']}"

@@ -1,12 +1,14 @@
-import sys, os
+import os
+import sys
+
 if __package__ is None:
     sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 import re
-from core import GeneralLLMClient
-from tools.tool_executor import ToolExecutor
-from tools.get_weather import get_weather
 
+from core import GeneralLLMClient
+from tools.get_weather import get_weather
+from tools.tool_executor import ToolExecutor
 
 # ReAct 提示词模板
 REACT_PROMPT_TEMPLATE = """
@@ -77,12 +79,12 @@ class ReActAgent:
                 observation = f"Error: Tool {tool_name} not found"
             else:
                 observation = tool_function(tool_input)
-            
+
             print(f"Observation: {observation}")
 
             self.history.append(f"Action: {action}")
             self.history.append(f"Observation: {observation}")
-        
+
         return None
 
     def _parse_output(self, text: str):
@@ -91,14 +93,14 @@ class ReActAgent:
         thought = thought_match.group(1).strip() if thought_match else None
         action = action_match.group(1).strip() if action_match else None
         return thought, action
-    
+
     def _parse_action(self, action_text: str):
         match = re.match(r"(\w+)\[(.*)\]", action_text)
         if match:
             return match.group(1), match.group(2)
         else:
             return None, None
-    
+
     def _parse_action_input(self, action_text: str):
         match = re.match(r"(\w+)\[(.*)\]", action_text)
         return match.group(1) if match else ""
