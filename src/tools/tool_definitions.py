@@ -1,3 +1,4 @@
+from .calculator import calculate
 from .get_weather import get_weather
 
 """
@@ -6,4 +7,4 @@ from .get_weather import get_weather
 """
 
 # 工具函数映射，用于根据函数名调用对应的函数
-tool_definitions = {"get_weather": get_weather}
+tool_definitions = {"get_weather": get_weather, "calculate": calculate}
