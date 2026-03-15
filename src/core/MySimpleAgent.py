@@ -1,13 +1,13 @@
-
 import re
 from typing import Iterator, Optional
 
-from core import GeneralLLMClient
-from core.config import Config
-from core.simpleAgent import SimpleAgent
+from .agentBase import AgentBase
+from .config import Config
+from .generalLLMClient import GeneralLLMClient
+from .message import Message
 
 
-class MySimpleAgent(SimpleAgent):
+class MySimpleAgent(AgentBase):
     def __init__(
             self,
             name: str,
@@ -30,7 +30,7 @@ class MySimpleAgent(SimpleAgent):
         enhanced_system_prompt = self.system_prompt or ""
         messages.append({"role": "system", "content": enhanced_system_prompt})
 
-        for msg in self.get_history:
+        for msg in self.get_history():
             messages.append({"role": msg.role, "content": msg.content})
 
         messages.append({"role": "user", "content": input_text})
@@ -40,8 +40,8 @@ class MySimpleAgent(SimpleAgent):
                 messages=messages,
                 **kwargs
             )
-            self.add_message(Message(input_text, "user"))
-            self.add_message(Message(response, "assistant"))
+            self.add_message(Message(role="user", content=input_text))
+            self.add_message(Message(role="assistant", content=response))
             print(f"{self.name} 生成回应: {response}")
             return response
 
@@ -101,8 +101,8 @@ class MySimpleAgent(SimpleAgent):
         if current_iteration >= max_tool_iterations and not final_response:
             final_response = self.llm.invoke(messages, **kwargs)
 
-        self.add_message(Message(input_text, "user"))
-        self.add_message(Message(final_response, "assistant"))
+        self.add_message(Message(role="user", content=input_text))
+        self.add_message(Message(role="assistant", content=final_response))
         print(f"{self.name} 响应完成")
 
         return final_response
@@ -169,7 +169,7 @@ class MySimpleAgent(SimpleAgent):
         if self.system_prompt:
             messages.append({"role": "system", "content": self.system_prompt})
 
-        for msg in self._history:
+        for msg in self.get_history():
             messages.append({"role": msg.role, "content": msg.content})
 
         messages.append({"role": "user", "content": input_text})
@@ -181,8 +181,8 @@ class MySimpleAgent(SimpleAgent):
 
         print()
 
-        self.add_message(Message(input_text, "user"))
-        self.add_message(Message(full_response, "assistant"))
+        self.add_message(Message(role="user", content=input_text))
+        self.add_message(Message(role="assistant", content=full_response))
         print(f"{self.name} 流式响应完成")
 
     def add_tool(self, tool) -> None:
@@ -193,9 +193,9 @@ class MySimpleAgent(SimpleAgent):
         print(f"工具 '{tool.name}' 已添加")
 
     def has_tool(self) -> bool:
-        return self.enable_tool_calling and self.tool_registry is not None
+        return self.enable_tool_calls and self.tool_registry is not None
 
-    def remove_tool(self, tool_name: str) -> None:
+    def remove_tool(self, tool_name: str) -> bool:
         if self.tool_registry:
             self.tool_registry.unregister(tool_name)
             return True

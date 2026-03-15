@@ -94,7 +94,7 @@ class GeneralLLMClient:
                 base_url_lower = actual_base_url.lower()
                 if "api.openai.com" in base_url_lower:
                     return "openai"
-                elif "api.deepseel.com" in base_url_lower:
+                elif "api.deepseek.com" in base_url_lower:
                     return "deepseek"
                 elif "dashscope.aliyuncs.com" in base_url_lower:
                     return "qwen"
@@ -129,7 +129,7 @@ class GeneralLLMClient:
                 return resolved_api_key, resolved_base_url
             elif self.provider == 'deepseek':
                 resolved_api_key = api_key or os.getenv('DEEPSEEK_API_KEY') or os.getenv("LLM_API_KEY")
-                resolved_base_url = base_url or os.getenv('LLM_BASE_URL') or 'https://api.deepseel.com'
+                resolved_base_url = base_url or os.getenv('LLM_BASE_URL') or 'https://api.deepseek.com'
                 return resolved_api_key, resolved_base_url
             elif self.provider == 'qwen':
                 resolved_api_key = api_key or os.getenv('DASHSCOPE_API_KEY') or os.getenv("LLM_API_KEY")
@@ -221,16 +221,22 @@ class GeneralLLMClient:
             else:
                 return "gpt-3.5-turbo"
 
-    def think(self, messages: List[Dict[str, str]], temperature: Optional[float] = None) -> Iterator[str]:
+    def think(self, messages: List[Dict[str, str]], temperature: Optional[float] = None, **kwargs) -> Iterator[str]:
         """
-        调用LLM模型进行思考并返回响应。
+        调用大语言模型进行思考，并返回流式响应。
+
+        这是主要的调用方法，默认使用流式响应以获得更好的用户体验。
+
         Args:
             messages: 消息列表
             temperature: 温度参数，控制输出的随机性
+            **kwargs: 其他参数
+
         Yields:
             模型响应文本片段（流式输出）
         """
-        print(f"🧠正在调用{self.model}模型")
+        temperature = temperature if temperature is not None else self.temperature
+
         try:
             create_params = {
                 "model": self.model,
@@ -242,10 +248,13 @@ class GeneralLLMClient:
             if self.extra_body:
                 create_params["extra_body"] = self.extra_body
 
+            # 合并额外的 kwargs
+            create_params.update(kwargs)
+
             response = self.client.chat.completions.create(**create_params)
 
             # 处理流式响应
-            print("LLM response success")
+            print(f"🧠 正在调用 {self.model} 模型")
             for chunk in response:
                 content = chunk.choices[0].delta.content or ""
                 if content:
@@ -253,8 +262,58 @@ class GeneralLLMClient:
                     yield content
             print()  # 流式输出结束后换行
         except Exception as e:
-            print(f"❌调用LLM 发生错误：{e}")
-            return
+            print(f"❌ 调用LLM发生错误：{e}")
+            raise
+
+    def invoke(self, messages: List[Dict[str, str]], temperature: Optional[float] = None, **kwargs) -> str:
+        """
+        非流式调用LLM，返回完整响应对象。
+
+        Args:
+            messages: 消息列表
+            temperature: 温度参数，控制输出的随机性
+            **kwargs: 其他参数
+
+        Returns:
+            模型完整响应文本
+        """
+        temperature = temperature if temperature is not None else self.temperature
+
+        try:
+            create_params = {
+                "model": self.model,
+                "messages": messages,
+                "temperature": temperature,
+                "max_tokens": self.max_tokens,
+                "stream": False
+            }
+            if self.extra_body:
+                create_params["extra_body"] = self.extra_body
+
+            # 合并额外的 kwargs
+            create_params.update(kwargs)
+
+            response = self.client.chat.completions.create(**create_params)
+            content = response.choices[0].message.content or ""
+            print(f"🧠 {self.model} 响应成功")
+            return content
+        except Exception as e:
+            print(f"❌ 调用LLM发生错误：{e}")
+            raise
+
+    def stream_invoke(self, messages: List[Dict[str, str]], temperature: Optional[float] = None, **kwargs) -> Iterator[str]:
+        """
+        流式调用LLM的别名方法，与think方法功能相同。
+
+        Args:
+            messages: 消息列表
+            temperature: 温度参数，控制输出的随机性
+            **kwargs: 其他参数
+
+        Yields:
+            模型响应文本片段（流式输出）
+        """
+        return self.think(messages, temperature, **kwargs)
 
 if __name__ == '__main__':
     """

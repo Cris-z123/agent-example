@@ -1,9 +1,8 @@
 from abc import ABC, abstractmethod
 from typing import Optional
 
-from core import GeneralLLMClient
-
 from .config import Config
+from .generalLLMClient import GeneralLLMClient
 from .message import Message
 
 

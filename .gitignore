@@ -22,6 +22,7 @@ dist/
 # IDE 配置文件（如 PyCharm 的 .idea/，VSCode 的 .vscode/）
 .idea/
 .vscode/
+.claude
 
 # 日志文件
 *.log
