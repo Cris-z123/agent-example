@@ -9,7 +9,7 @@ class ToolRegistry:
         self._tools: dict[str, Tool] = {}
         self._functions: dict[str, dict[str, Any]] = {}
 
-        self.readmeta_cache: Dict[str, Dict[str, Any]] = {}
+        self.read_metadata_cache: Dict[str, Dict[str, Any]] = {}
         self.circuit_breaker = circuit_breaker or CircuitBreaker()
 
     def register_tool(self, tool: Tool, auto_expand: bool = True):
@@ -68,7 +68,7 @@ class ToolRegistry:
             return func_info["func"]
         return None
 
-    def excute_tool(self, name:str, input_text: str) -> ToolResponse:
+    def execute_tool(self, name:str, input_text: str) -> ToolResponse:
         if self.circuit_breaker.is_open(name):
             status = self.circuit_breaker.get_status(name)
             return ToolResponse.error(
@@ -139,3 +139,40 @@ class ToolRegistry:
         self.circuit_breaker.record_result(name, response)
 
         return response
+
+    def get_tools_description(self) -> str:
+
+        description = []
+        for tool in self._tools.values():
+            description.append(f"{tool.name}: {tool.description}")
+
+        for name, info in self._functions.items():
+            description.append(f"{name}: {info['description']}")
+
+        return "\n".join(description) if description else "当前没有注册任何工具或函数"
+
+    def list_tools(self) -> list[str]:
+        return list(self._tools.keys()) + list(self._functions.keys())
+
+    def get_all_tools(self) -> list[Tool]:
+        return list(self._tools.values())
+
+    def clear(self):
+        self._tools.clear()
+        self._functions.clear()
+        print("工具注册表已清空")
+
+    def cache_read_metadata(self, file_path: str, metadata: Dict[str, Any]):
+        self.read_metadata_cache[file_path] = metadata
+
+    def get_read_metadata(self, file_path: str) -> Optional[Dict[str, Any]]:
+        return self.read_metadata_cache.get(file_path)
+
+    def clear_read_cache(self, file_path: Optional[str] = None):
+        if file_path:
+            self.read_metadata_cache.pop(file_path, None)
+        else:
+            self.read_metadata_cache.clear()
+
+# 全局工具注册表
+global_registry = ToolRegistry()
