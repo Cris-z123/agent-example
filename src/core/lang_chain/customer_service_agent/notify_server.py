@@ -1,8 +1,7 @@
 from fastmcp import FastMCP
 
-mcp = FastMCP(
-    "通知服务"
-)
+mcp = FastMCP("通知服务")
+
 
 @mcp.tool()
 async def send_sms(phone: str, content: str, caller_id: str = "") -> str:
@@ -15,10 +14,8 @@ async def send_sms(phone: str, content: str, caller_id: str = "") -> str:
     Returns:
         短信发送结果字符串
     """
-    return (
-        f"短信已发送：号码={phone}，内容='{content}'"
-        f"操作人: {caller_id}"
-    )
+    return f"短信已发送：号码={phone}，内容='{content}'操作人: {caller_id}"
+
 
 @mcp.resource("company://policies/return", mime_type="text/markdown", description="退换货政策")
 def get_return_policy() -> str:
@@ -29,19 +26,11 @@ def get_return_policy() -> str:
         # 4. 退款将在收货确认后 3 个工作日内退回原支付方式
     """
 
+
 @mcp.prompt
 def refund_response(order_id: str, amount: str) -> str:
-    return (
-        f"好的，已为您处理订单 {order_id} 的退款。\n"
-        f"退款金额：{amount} 元\n"
-        f"预计 3 个工作日内退回原支付方式。\n"
-        f"如有疑问可随时联系我们。"
-    )
+    return f"好的，已为您处理订单 {order_id} 的退款。\n退款金额：{amount} 元\n预计 3 个工作日内退回原支付方式。\n如有疑问可随时联系我们。"
+
 
 if __name__ == "__main__":
-    mcp.run(
-        transport="http",
-        host="127.0.0.1",
-        port=8002,
-        path="/notify"
-    )
+    mcp.run(transport="http", host="127.0.0.1", port=8002, path="/notify")

@@ -2,9 +2,7 @@ import asyncio
 
 from fastmcp import Context, FastMCP
 
-mcp = FastMCP(
-    "订单服务"
-)
+mcp = FastMCP("订单服务")
 
 ORDERS = {
     "ORD-001": {"product": "无线耳机", "status": "已签收", "amount": 299.0},
@@ -12,6 +10,7 @@ ORDERS = {
     "ORD-003": {"product": "4K显示器", "status": "已签收", "amount": 2499.0},
     "ORD-004": {"product": "鼠标垫", "status": "配送中", "amount": 29.0},
 }
+
 
 @mcp.tool()
 async def query_order(order_id: str, caller_id: str = "", ctx: Context = None) -> str:
@@ -29,15 +28,10 @@ async def query_order(order_id: str, caller_id: str = "", ctx: Context = None) -
     order = ORDERS.get(order_id)
 
     if order:
-        return (
-            f"订单ID: {order_id}\n"
-            f"产品: {order['product']}\n"
-            f"状态: {order['status']}\n"
-            f"金额: {order['amount']}\n"
-            f"调用者ID: {caller_id}\n"
-        )
+        return f"订单ID: {order_id}\n产品: {order['product']}\n状态: {order['status']}\n金额: {order['amount']}\n调用者ID: {caller_id}\n"
     else:
         return f"订单ID: {order_id}\n订单不存在, 调用者ID: {caller_id}\n"
+
 
 @mcp.tool()
 async def process_refund(order_id: str, reason: str, caller_id: str = "", ctx: Context = None) -> str:
@@ -59,7 +53,7 @@ async def process_refund(order_id: str, reason: str, caller_id: str = "", ctx: C
     if not order:
         return f"订单ID: {order_id}\n订单不存在, 调用者ID: {caller_id}\n"
 
-    amount = order['amount']
+    amount = order["amount"]
 
     if amount >= 500:
         result = await ctx.elicit(
@@ -84,7 +78,7 @@ async def process_refund(order_id: str, reason: str, caller_id: str = "", ctx: C
 
 
 @mcp.tool()
-async def batch_refund(order_ids: str, reason: str, caller_id: str= "", ctx: Context = None):
+async def batch_refund(order_ids: str, reason: str, caller_id: str = "", ctx: Context = None):
     """
     批量处理退款请求
     Args:
@@ -120,10 +114,6 @@ async def batch_refund(order_ids: str, reason: str, caller_id: str= "", ctx: Con
 
     return f"批量处理订单退款完成, 订单id{order_ids}, 退款成功:{success_count}, 退款失败:{total_count - success_count}, 调用者id{caller_id}"
 
+
 if __name__ == "__main__":
-    mcp.run(
-        transport="http",
-        host="127.0.0.1",
-        port=8001,
-        path="/order"
-    )
+    mcp.run(transport="http", host="127.0.0.1", port=8001, path="/order")

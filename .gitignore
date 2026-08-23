@@ -27,6 +27,10 @@ dist/
 # 日志文件
 *.log
 
+# LangGraph runtime data
+.langgraph_api/
+.langgraph/
+
 # 单元测试/代码覆盖率输出
 .pytest_cache/
 .coverage

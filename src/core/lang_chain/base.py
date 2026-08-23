@@ -1,9 +1,10 @@
-
+import os
 import uuid
 
 from dotenv import load_dotenv
 from langchain.agents import create_agent
 from langchain.agents.middleware import SummarizationMiddleware, wrap_tool_call
+from langchain.chat_models import init_chat_model
 from langchain.messages import ToolMessage
 from langchain.tools import ToolRuntime, tool
 from langgraph.checkpoint.mysql.pymysql import PyMySQLSaver
@@ -13,23 +14,30 @@ from pydantic import BaseModel, Field
 
 load_dotenv()
 
+glm_llm = init_chat_model(
+    model=os.getenv("GLM_MODEL_ID"),
+    model_provider="openai",
+    base_url=os.getenv("GLM_BASE_URL"),
+    api_key=os.getenv("GLM_API_KEY"),
+)
+
+
 class UserContext(BaseModel):
     user_id: str = Field(description="用户唯一标识")
     channel: str = Field(description="用户访问渠道")
 
+
 class CustomerSessionState(BaseModel):
     current_order_id: str = Field(default=None, description="当前用户查询的订单号")
 
+
 MOCK_DATABASE = {
     "orders": {
-        "order001": {
-            "order_id": "order001", "status": "已发货", "product": "智能手机", "preference_context": "华为手机P70"
-        },
-        "order002": {
-            "order_id": "order002", "status": "待支付", "product": "智能手表", "preference_context": "Apple Watch Series 8"
-        },
+        "order001": {"order_id": "order001", "status": "已发货", "product": "智能手机", "preference_context": "华为手机P70"},
+        "order002": {"order_id": "order002", "status": "待支付", "product": "智能手表", "preference_context": "Apple Watch Series 8"},
     }
 }
+
 
 @tool
 def get_user_info(runtime: ToolRuntime) -> str:
@@ -53,7 +61,7 @@ def get_user_info(runtime: ToolRuntime) -> str:
 
 
 @tool
-def query_order_status(order_id: str,runtime: ToolRuntime) -> Command:
+def query_order_status(order_id: str, runtime: ToolRuntime) -> Command:
     """
     获取用户订单状态
     Args:
@@ -65,28 +73,19 @@ def query_order_status(order_id: str,runtime: ToolRuntime) -> Command:
     order_info = MOCK_DATABASE["orders"].get(order_id)
 
     if not order_info:
-        return Command(
-            update={
-                "messages": [
-                    ToolMessage(
-                        content=f"错误: 订单{order_id}不存在。",
-                        tool_call_id=runtime.tool_call_id
-                    )
-                ]
-            }
-        )
+        return Command(update={"messages": [ToolMessage(content=f"错误: 订单{order_id}不存在。", tool_call_id=runtime.tool_call_id)]})
 
     updates = {
         "current_order_id": order_id,
         "messages": [
             ToolMessage(
-                content=f"订单号: {order_info['order_id']}, 状态: {order_info['status']}, 产品: {order_info['product']}"
-                        f"需要更新用户偏好，用户偏好: {order_info['preference_context']}",
-                tool_call_id=runtime.tool_call_id
+                content=f"订单号: {order_info['order_id']}, 状态: {order_info['status']}, 产品: {order_info['product']}需要更新用户偏好，用户偏好: {order_info['preference_context']}",
+                tool_call_id=runtime.tool_call_id,
             )
-        ]
+        ],
     }
     return Command(update=updates)
+
 
 @tool
 def update_user_preference(category: str, liked_item: str, runtime: ToolRuntime) -> str:
@@ -104,10 +103,7 @@ def update_user_preference(category: str, liked_item: str, runtime: ToolRuntime)
 
     key = str(uuid.uuid4())
 
-    value_to_store = {
-        "category": category,
-        "liked_item": liked_item
-    }
+    value_to_store = {"category": category, "liked_item": liked_item}
 
     runtime.store.put(namespace, key, value_to_store)
     return f"已更新用户偏好到longTermMemory: 类别 - {category}, 喜欢的物品 - {liked_item}"
@@ -134,23 +130,18 @@ def get_recommendation(runtime: ToolRuntime) -> str:
 
     return f"根据用户当前订单[{current_order}]和长期偏好{pref_list if pref_list else '无'}, 为用户推荐相关配件或类型风格商品"
 
+
 @wrap_tool_call
 def handle_tool_errors(request, handler):
     try:
         return handler(request)
     except Exception as e:
-        return ToolMessage(
-            content=f"调用工具错误: 请稍后重试，错误信息: ({str(e)})",
-            tool_call_id=request.tool_call["id"]
-        )
+        return ToolMessage(content=f"调用工具错误: 请稍后重试，错误信息: ({str(e)})", tool_call_id=request.tool_call["id"])
 
 
 DB_URL = "mysql+pymysql://root:root@localhost:3306/langchain_db?charset=utf8mb4"
 
-with(
-    PyMySQLSaver.from_conn_string(DB_URL) as checkpointer,
-    PyMySQLStore.from_conn_string(DB_URL) as store
-):
+with PyMySQLSaver.from_conn_string(DB_URL) as checkpointer, PyMySQLStore.from_conn_string(DB_URL) as store:
     checkpointer.setup()
     store.setup()
 
@@ -168,15 +159,7 @@ with(
         store=store,
         state_schema=CustomerSessionState,
         context_schema=UserContext,
-        middleware=[
-            SummarizationMiddleware(
-                model=glm_llm,
-                summary_prompt="请总结以下对话内容：{messages}",
-                trigger=("messages", 10),
-                keep=("messages", 5)
-            ),
-            handle_tool_errors
-        ]
+        middleware=[SummarizationMiddleware(model=glm_llm, summary_prompt="请总结以下对话内容：{messages}", trigger=("messages", 10), keep=("messages", 5)), handle_tool_errors],
     )
 
     # 控制台交互循环 (流式调用) — 必须在 with 块内，保证 checkpointer/store 的连接存活
@@ -194,8 +177,8 @@ with(
         try:
             user_input = input("[你]: ").strip()
 
-            if user_input.lower() in ['quit', 'exit', '退出', 'q']:
-                print('客服助手: 下次再见!')
+            if user_input.lower() in ["quit", "exit", "退出", "q"]:
+                print("客服助手: 下次再见!")
                 break
 
             if not user_input:

@@ -21,12 +21,15 @@ from pydantic import BaseModel
 
 load_dotenv()
 
+
 class CustomContext(BaseModel):
     user_id: str
     user_name: str
 
+
 class CustomState(AgentState):
-    audit_log: Annotated[list[str], operator.add] # 当多个节点（或同一个节点多次）对该字段进行更新时，合并策略是使用 operator.add（即列表拼接）
+    audit_log: Annotated[list[str], operator.add]  # 当多个节点（或同一个节点多次）对该字段进行更新时，合并策略是使用 operator.add（即列表拼接）
+
 
 @tool
 def validate_phone(phone: str) -> str:
@@ -46,11 +49,8 @@ def validate_phone(phone: str) -> str:
 async def auth_inject(request: MCPToolCallRequest, handler):
     """将用户身份注入 MCP 工具参数"""
     ctx: CustomContext = request.runtime.context
-    return await handler(
-        request.override(
-            args={**request.args, "caller_id": f"{ctx.user_id}({ctx.user_name})"}
-        )
-    )
+    return await handler(request.override(args={**request.args, "caller_id": f"{ctx.user_id}({ctx.user_name})"}))
+
 
 async def audit_log(request: MCPToolCallRequest, handler):
     runtime = request.runtime
@@ -58,22 +58,11 @@ async def audit_log(request: MCPToolCallRequest, handler):
 
     text = result.content[0].text if result.content else ""
 
-    tool_msg = ToolMessage(
-        content=text,
-        tool_call_id=runtime.tool_call_id
-    )
+    tool_msg = ToolMessage(content=text, tool_call_id=runtime.tool_call_id)
 
-    log_entry= (
-        f"[{time.strftime('%H:%M:%S')}] {runtime.context.user_name} "
-        f"-> {request.name}: {str(request.args)}"
-    )
+    log_entry = f"[{time.strftime('%H:%M:%S')}] {runtime.context.user_name} -> {request.name}: {str(request.args)}"
 
-    return Command(
-        update={
-            "messages": [tool_msg],
-            "audit_log": [log_entry]
-        }
-    )
+    return Command(update={"messages": [tool_msg], "audit_log": [log_entry]})
 
 
 def on_progress(progress, total, message, context: CallbackContext):
@@ -81,9 +70,11 @@ def on_progress(progress, total, message, context: CallbackContext):
         pct = progress / total * 100
         print(f" [进度] {progress}/{total} ({pct:.0f}%) - {message or ''}")
 
+
 def on_logging(params: LoggingMessageNotificationParams, context):
     msg = params.data.get("msg")
     print(f" [{context.server_name}] [{params.level}] {msg}")
+
 
 def on_elicitation(mcp_context: RequestContext, params: ElicitRequestParams, context: CallbackContext) -> ElicitResult:
     """大额退款时，让用户在控制台确认"""
@@ -117,6 +108,7 @@ def on_elicitation(mcp_context: RequestContext, params: ElicitRequestParams, con
 
     return ElicitResult(action="accept", content={"value": selected})
 
+
 async def handle_interrupts(result, agent, config, context):
     while result.interrupts:
         interrupt_data = result.interrupts[0].value
@@ -142,7 +134,7 @@ async def handle_interrupts(result, agent, config, context):
                 for k, v in req["args"].items():
                     print(f" 参数: {k} = {v}")
 
-            hint_map ={
+            hint_map = {
                 "approve": "批准，按原参数执行工具",
                 "edit": "修改参数后执行工具",
                 "reject": "拒绝执行，附带反馈说明",
@@ -158,7 +150,6 @@ async def handle_interrupts(result, agent, config, context):
                     break
                 print(f" 无效输入，该操作只允许: {allowed}")
 
-
             if decision == "approve":
                 decisions.append({"type": "approve"})
                 print(" 已批准 —— 工具将按原参数执行")
@@ -171,13 +162,12 @@ async def handle_interrupts(result, agent, config, context):
                         new_args[k] = v
                     else:
                         new_args[k] = new_val
-                    decisions.append({
-                        "type": "edit",
-                        "edited_action": {
-                            "name": req["name"],
-                            "args": new_args
-                        },
-                    })
+                    decisions.append(
+                        {
+                            "type": "edit",
+                            "edited_action": {"name": req["name"], "args": new_args},
+                        }
+                    )
                     print(f" 已修改参数: {new_args}")
             elif decision == "reject":
                 reason = input(" 请输入拒绝原因: ").strip()
@@ -203,9 +193,8 @@ async def handle_interrupts(result, agent, config, context):
             version="v2",
         )
 
-
-
     return result
+
 
 async def main():
     client = MultiServerMCPClient(
@@ -217,14 +206,14 @@ async def main():
             "notify_server": {
                 "transport": "http",
                 "url": "http://localhost:8002/notify",
-            }
+            },
         },
         tool_interceptors=[auth_inject, audit_log],
         callbacks=Callbacks(
             on_progress=on_progress,
             on_logging_message=on_logging,
             on_elicitation=on_elicitation,
-        )
+        ),
     )
 
     mcp_tools = await client.get_tools()
@@ -241,11 +230,11 @@ async def main():
     checkpointer = MemorySaver()
 
     glm_llm = init_chat_model(
-            model= os.getenv("GLM_MODEL_ID"),
-            model_provider="openai",
-            base_url= os.getenv("GLM_BASE_URL"),
-            api_key= os.getenv("GLM_API_KEY"),
-        )
+        model=os.getenv("GLM_MODEL_ID"),
+        model_provider="openai",
+        base_url=os.getenv("GLM_BASE_URL"),
+        api_key=os.getenv("GLM_API_KEY"),
+    )
 
     agent = create_agent(
         model=glm_llm,
@@ -270,12 +259,12 @@ async def main():
             3. 退款成功后询问用户是否需要短信通知。如果要通知，先调用 validate_phone 校验手机号，再用 send_sms 发送。
             4. 涉及退换货政策问题时，参考以下政策： {policy_text}
             5. 回复退款结果时，参考以下模板： {prompt_template}
-        """
+        """,
     )
 
     ctx = CustomContext(user_id="user_123", user_name="123")
 
-    config = { "configurable": { "thread_id": "session_01" } }
+    config = {"configurable": {"thread_id": "session_01"}}
 
     print("=" * 60)
     print(" 电商智能售后系统")
@@ -292,12 +281,7 @@ async def main():
             if not user_input:
                 continue
 
-            result = await agent.ainvoke(
-                { "messages": { "role": "user", "content": user_input }},
-                config=config,
-                context=ctx,
-                version="v2"
-            )
+            result = await agent.ainvoke({"messages": {"role": "user", "content": user_input}}, config=config, context=ctx, version="v2")
 
             result = await handle_interrupts(result, agent, config, ctx)
 
@@ -313,7 +297,6 @@ async def main():
 
         except Exception as e:
             print(f"错误：{e}")
-
 
 
 if __name__ == "__main__":

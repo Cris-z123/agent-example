@@ -8,6 +8,7 @@ from langchain_mcp_adapters.client import MultiServerMCPClient
 
 load_dotenv()
 
+
 async def main():
     client = MultiServerMCPClient(
         # {
@@ -28,10 +29,10 @@ async def main():
     mcpTools = await client.get_tools()
 
     glm_llm = init_chat_model(
-        model= os.getenv("GLM_MODEL_ID"),
+        model=os.getenv("GLM_MODEL_ID"),
         model_provider="openai",
-        base_url= os.getenv("GLM_BASE_URL"),
-        api_key= os.getenv("GLM_API_KEY"),
+        base_url=os.getenv("GLM_BASE_URL"),
+        api_key=os.getenv("GLM_API_KEY"),
     )
 
     agent = create_agent(
@@ -39,7 +40,7 @@ async def main():
         tools=mcpTools,
     )
 
-    weather_response = await agent.ainvoke({"messages": [{"role": "user", "content": "深圳天气怎么样" }]})
+    weather_response = await agent.ainvoke({"messages": [{"role": "user", "content": "深圳天气怎么样"}]})
 
     print(f"响应: {weather_response}")
     print(f"天气: {weather_response['messages'][-1].content}")

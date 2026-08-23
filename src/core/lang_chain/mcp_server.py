@@ -2,6 +2,7 @@ from fastmcp import FastMCP
 
 mcp = FastMCP("Weather")
 
+
 # 工具可以异步也可以同步
 @mcp.tool()
 async def get_weather(location: str) -> str:
@@ -22,9 +23,4 @@ async def get_weather(location: str) -> str:
 
 
 if __name__ == "__main__":
-    mcp.run(
-        transport="streamable-http",
-        host="127.0.0.1",
-        port=8001,
-        path="/test"
-    )
+    mcp.run(transport="streamable-http", host="127.0.0.1", port=8001, path="/test")
