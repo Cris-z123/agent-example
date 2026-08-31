@@ -20,6 +20,12 @@ dependencies = [
     "langchain-mcp-adapters>=0.3.2",
     "fastmcp>=3.4.7",
     "langgraph-cli[inmem]>=0.4.31",
+    "langgraph-checkpoint-postgres>=3.1.2",
+    "psycopg[binary]>=3.3.4",
+    "deepagents>=0.7.8",
+    "opensandbox>=0.1.15",
+    "opensandbox-code-interpreter>=0.1.2",
+    "loguru>=0.7.3",
 ]
 
 
@@ -53,8 +59,6 @@ quote-style = "double"  # 统一使用双引号
 requires = ["setuptools>=73.0.0"] # 打包依赖：需要哪个版本的 setuptools 来构建这个包
 build-backend = "setuptools.build_meta" # 指定 setuptools 的现代 API 作为构建入口
 
-[tool.setuptools]
-packages = ["all_package"] # 声明这个项目包含的包名列表，这里只有一个叫 "all_package" 的包
-
-[tool.setuptools.package-dir]
-"all_package" = "." # 将包名 "all_package" 映射到当前目录（项目根目录）
+[tool.setuptools.packages.find]
+where = ["src"] # 从 src/ 目录发现包（core、utils、tools、knowledge 等）
+namespaces = true # 允许无 __init__.py 的命名空间包（如 utils、knowledge）
