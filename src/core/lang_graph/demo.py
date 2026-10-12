@@ -80,7 +80,7 @@ def llm_call(state: CalculatorState) -> dict:
 
 
 # 4. 路由逻辑（条件边）
-def should_continue(state: CalculatorState) -> Literal["tool_node", END]:
+def should_continue(state: CalculatorState) -> Literal["tool_node", "__end__"]:
     """检查最后一条消息，如果有 tool_calls 则进入工具节点，否则结束"""
     last_message = state["messages"][-1]
     # 检查是否有 tool_calls 且 tool_calls 不为空
